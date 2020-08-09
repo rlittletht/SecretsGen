@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# ignore secret configs (passwords and such)
+*secret*.config
+*secret*.resx
+*secret*.Designer.cs
+*.cscfg
+
 # User-specific files
 *.rsuser
 *.suo
@@ -23,6 +29,7 @@ mono_crash.*
 [Rr]eleases/
 x64/
 x86/
+build/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
