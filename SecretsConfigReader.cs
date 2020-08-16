@@ -12,6 +12,14 @@ namespace SecretsGen
     {
         public SecretsConfigReader() { }
 
+        /*----------------------------------------------------------------------------
+        	%%Function: FParseSecretsFilesConfigElements
+        	%%Qualified: SecretsGen.SecretsConfigReader.FParseSecretsFilesConfigElements
+        	
+            <secretsFilesConfig>
+                <secretsFileConfig>...</secretsFileConfig>
+            </secretsFilesConfig>
+        ----------------------------------------------------------------------------*/
         static bool FParseSecretsFilesConfigElements(XmlReader xr, string sElement, SecretsFilesConfig filesConfig)
         {
             if (sElement == "secretsFileConfig")
@@ -27,6 +35,10 @@ namespace SecretsGen
             throw new Exception($"unknown element {sElement}");
         }
 
+        /*----------------------------------------------------------------------------
+        	%%Function: CreateSecretsFilesConfigFromXml
+        	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretsFilesConfigFromXml
+        ----------------------------------------------------------------------------*/
         static SecretsFilesConfig CreateSecretsFilesConfigFromXml(XmlReader xr)
         {
             // if the config is empty, return null
@@ -41,6 +53,11 @@ namespace SecretsGen
             return filesConfig;
         }
 
+        /*----------------------------------------------------------------------------
+        	%%Function: CreateSecretsFilesConfig
+        	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretsFilesConfig
+        	
+        ----------------------------------------------------------------------------*/
         public static SecretsFilesConfig CreateSecretsFilesConfig(string xml)
         {
             using (StringReader sr = new StringReader(xml))
@@ -49,6 +66,11 @@ namespace SecretsGen
             }
         }
 
+        /*----------------------------------------------------------------------------
+        	%%Function: CreateSecretsFilesConfig
+        	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretsFilesConfig
+        	
+        ----------------------------------------------------------------------------*/
         public static SecretsFilesConfig CreateSecretsFilesConfig(Stream stm)
         {
             XmlDocument dom = new XmlDocument();
@@ -66,12 +88,11 @@ namespace SecretsGen
             return CreateSecretsFilesConfigFromXml(XmlReader.Create(stm));
         }
 
-
         #region File Parsing
 
         /*----------------------------------------------------------------------------
         	%%Function: FProcessSecretsFileAttributes
-        	%%Qualified: SecretsGen.SecretsFileConfig.FProcessSecretsFileConfigAttributes
+        	%%Qualified: SecretsGen.SecretsConfigReader.FProcessSecretsFileConfigAttributes
         	
             <secretsFile targetFile="...">
         ----------------------------------------------------------------------------*/
@@ -92,7 +113,7 @@ namespace SecretsGen
 
         /*----------------------------------------------------------------------------
         	%%Function: FProcessSecretAttributes
-        	%%Qualified: SecretsGen.SecretsFileConfig.FProcessSecretAttributes
+        	%%Qualified: SecretsGen.SecretsConfigReader.FProcessSecretAttributes
         	
             <secret placeholder="...">
         ----------------------------------------------------------------------------*/
@@ -109,7 +130,7 @@ namespace SecretsGen
 
         /*----------------------------------------------------------------------------
         	%%Function: FParseSecretsElement
-        	%%Qualified: SecretsGen.SecretsFileConfig.FParseSecretsElement
+        	%%Qualified: SecretsGen.SecretsConfigReader.FParseSecretsElement
         	
             <secrets>
                 <secret>...</secret>
@@ -136,7 +157,7 @@ namespace SecretsGen
 
         /*----------------------------------------------------------------------------
         	%%Function: FParseSecretsFileConfigElements
-        	%%Qualified: SecretsGen.SecretsFileConfig.FParseSecretsFileConfigElements
+        	%%Qualified: SecretsGen.SecretsConfigReader.FParseSecretsFileConfigElements
         	
             <secretsFileConfig>
                 <secrets>...</secrets>
@@ -168,7 +189,7 @@ namespace SecretsGen
 
         /*----------------------------------------------------------------------------
         	%%Function: CreateSecretFileConfigFromXml
-        	%%Qualified: SecretsGen.SecretsFileConfig.CreateSecretFileConfigFromXml
+        	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretFileConfigFromXml
         	
             Create a SecretsFileConfig from the given XmlReader
         ----------------------------------------------------------------------------*/
@@ -184,7 +205,7 @@ namespace SecretsGen
 
         /*----------------------------------------------------------------------------
         	%%Function: CreateSecretFileConfigFromXml
-        	%%Qualified: SecretsGen.SecretsFileConfig.CreateSecretFileConfigFromXml
+        	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretFileConfigFromXml
         	
         ----------------------------------------------------------------------------*/
         public static SecretsFileConfig CreateSecretFileConfigFromXmlNonTemplate(XmlReader xr)
