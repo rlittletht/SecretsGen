@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using Microsoft.Identity.Client;
 using NUnit.Framework;
 using XMLIO;
 
@@ -11,6 +12,8 @@ namespace SecretsGen
     class SecretsFileConfig
     {
         private Dictionary<string, string> m_mpPlaceholderToSecretID = new Dictionary<string, string>();
+        private Dictionary<string, string> m_mpSecretIDSecret = new Dictionary<string, string>();
+
         private string TargetFile { get; set; }
         private string TargetFileContentTemplate { get; set; }
         public SecretsFileConfig() { }
@@ -19,6 +22,7 @@ namespace SecretsGen
         {
             m_mpPlaceholderToSecretID.Add(sPlaceholder, sSecretID);
         }
+
 
         #region File Parsing
 
@@ -186,7 +190,7 @@ namespace SecretsGen
         }
         #endregion
 
-        #region Tests
+        #region File I/O Tests
 
         [Test]
         public static void TestCreateSecretFileConfigFromXml_EmptyString()
@@ -263,5 +267,74 @@ namespace SecretsGen
             Assert.AreEqual("<secretTargetFile><connectionString=\"$$$connectionString$$$\"/></secretTargetFile>", fileConfig.TargetFileContentTemplate);
         }
         #endregion
+
+        public string TransformContentTemplate()
+        {
+            string sTransformed = TargetFileContentTemplate;
+
+            foreach (string sKey in m_mpPlaceholderToSecretID.Keys)
+            {
+                string sSecret = m_mpSecretIDSecret[m_mpPlaceholderToSecretID[sKey]];
+
+                sTransformed = sTransformed.Replace(sKey, sSecret);
+            }
+
+            return sTransformed;
+        }
+
+        #region Test transformations
+
+        [Test]
+        public static void TestTransformContentTemplate_MissingKey()
+        {
+            SecretsFileConfig fileConfig = new SecretsFileConfig();
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
+            fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
+
+            Assert.Throws<KeyNotFoundException>(() => fileConfig.TransformContentTemplate());
+        }
+
+        [Test]
+        public static void TestTransformContentTemplate_SingleSecret()
+        {
+            SecretsFileConfig fileConfig = new SecretsFileConfig();
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
+            fileConfig.m_mpSecretIDSecret.Add("secret-id-1", "MYSECRET!");
+            fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
+
+            string sTransformed = fileConfig.TransformContentTemplate();
+            Assert.AreEqual("this is my MYSECRET! test", sTransformed);
+        }
+
+        [Test]
+        public static void TestTransformContentTemplate_TwoSecretsOneReplace()
+        {
+            SecretsFileConfig fileConfig = new SecretsFileConfig();
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder2$$", "secret-id-2");
+            fileConfig.m_mpSecretIDSecret.Add("secret-id-1", "MYSECRET!");
+            fileConfig.m_mpSecretIDSecret.Add("secret-id-2", "MY2SECRET!");
+            fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
+
+            string sTransformed = fileConfig.TransformContentTemplate();
+            Assert.AreEqual("this is my MYSECRET! test", sTransformed);
+        }
+
+        [Test]
+        public static void TestTransformContentTemplate_TwoSecretsTwoReplaces()
+        {
+            SecretsFileConfig fileConfig = new SecretsFileConfig();
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
+            fileConfig.m_mpPlaceholderToSecretID.Add("$$placeholder2$$", "secret-id-2");
+            fileConfig.m_mpSecretIDSecret.Add("secret-id-1", "MYSECRET!");
+            fileConfig.m_mpSecretIDSecret.Add("secret-id-2", "MY2SECRET!");
+            fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test $$placeholder2$$";
+
+            string sTransformed = fileConfig.TransformContentTemplate();
+            Assert.AreEqual("this is my MYSECRET! test MY2SECRET!", sTransformed);
+        }
+
+        #endregion
+
     }
 }
