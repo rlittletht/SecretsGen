@@ -12,15 +12,135 @@ namespace SecretsGen
     {
         private Dictionary<string, string> m_mpPlaceholderToSecretID = new Dictionary<string, string>();
         private string TargetFile { get; set; }
-        
+        private string TargetFileContentTemplate { get; set; }
         public SecretsFileConfig() { }
+
+        public void AddPlaceholder(string sPlaceholder, string sSecretID)
+        {
+            m_mpPlaceholderToSecretID.Add(sPlaceholder, sSecretID);
+        }
+
+        #region File Parsing
+
+        /*----------------------------------------------------------------------------
+        	%%Function: FProcessSecretsFileAttributes
+        	%%Qualified: SecretsGen.SecretsFileConfig.FProcessSecretsFileConfigAttributes
+        	
+            <secretsFile targetFile="...">
+        ----------------------------------------------------------------------------*/
+        public static bool FProcessSecretsFileAttributes(string sAttribute, string sValue, SecretsFileConfig fileConfig)
+        {
+            if (sAttribute == "targetFile")
+            {
+                bool fRet = XmlIO.FProcessGenericValue(sValue, out string sTargetFile, (string)null);
+
+                if (fRet)
+                    fileConfig.TargetFile = sTargetFile;
+
+                return fRet;
+            }
+
+            return false;
+        }
+
+        /*----------------------------------------------------------------------------
+        	%%Function: FProcessSecretAttributes
+        	%%Qualified: SecretsGen.SecretsFileConfig.FProcessSecretAttributes
+        	
+            <secret placeholder="...">
+        ----------------------------------------------------------------------------*/
+        public static bool FProcessSecretAttributes(string sAttributes, string sValue, Dictionary<string, string> attrs)
+        {
+            if (sAttributes == "placeholder")
+            {
+                attrs.Add("placeholder", sValue);
+                return true;
+            }
+
+            return false;
+        }
+
+        /*----------------------------------------------------------------------------
+        	%%Function: FParseSecretsElement
+        	%%Qualified: SecretsGen.SecretsFileConfig.FParseSecretsElement
+        	
+            <secrets>
+                <secret>...</secret>
+            </secrets>
+        ----------------------------------------------------------------------------*/
+        public static bool FParseSecretsElement(XmlReader xr, string sElement, SecretsFileConfig fileConfig)
+        {
+            if (sElement == "secret")
+            {
+                XmlIO.ContentCollector contentCollector = new XmlIO.ContentCollector();
+                Dictionary<string, string> attrs = new Dictionary<string, string>();
+
+                if (XmlIO.FReadElement(xr, attrs, sElement, FProcessSecretAttributes, null, contentCollector))
+                {
+                    fileConfig.AddPlaceholder(attrs["placeholder"], contentCollector.ToString());
+                    return true;
+                }
+
+                return false;
+            }
+
+            throw new Exception($"unknown element: {sElement}");
+        }
+
+        /*----------------------------------------------------------------------------
+        	%%Function: FParseSecretsFileConfigElements
+        	%%Qualified: SecretsGen.SecretsFileConfig.FParseSecretsFileConfigElements
+        	
+            <secretsFileConfig>
+                <secrets>...</secrets>
+                <template>...</template>
+            </secretsFileConfig>
+        ----------------------------------------------------------------------------*/
+        public static bool FParseSecretsFileConfigElements(XmlReader xr, string sElement, SecretsFileConfig fileConfig)
+        {
+            if (sElement == "secrets")
+            {
+                // parse the secrets element
+                return XmlIO.FReadElement(xr, fileConfig, sElement, null, FParseSecretsElement);
+            }
+
+            if (sElement == "template")
+            {
+                // this is a content block (likely cdata) that represents the content for the file we want
+                // to create. it contains no elements or attributes, only content
+
+                XmlIO.ContentCollector contentCollector = new XmlIO.ContentCollector();
+                XmlIO.FReadElement<object>(xr, null, sElement, null, null, contentCollector);
+
+                fileConfig.TargetFileContentTemplate = contentCollector.ToString();
+                return true;
+            }
+
+            throw new Exception($"unknown element: {sElement}");
+        }
+
+        /*----------------------------------------------------------------------------
+        	%%Function: CreateSecretFileConfigFromXml
+        	%%Qualified: SecretsGen.SecretsFileConfig.CreateSecretFileConfigFromXml
+        	
+            Create a SecretsFileConfig from the given XmlReader
+        ----------------------------------------------------------------------------*/
+        public static SecretsFileConfig CreateSecretFileConfigFromXml(XmlReader xr)
+        {
+            SecretsFileConfig fileConfig = new SecretsFileConfig();
+
+            if (!XmlIO.FReadElement<SecretsFileConfig>(xr, fileConfig, "secretsFileConfig", FProcessSecretsFileAttributes, FParseSecretsFileConfigElements))
+                return null;
+
+            return fileConfig;
+        }
 
         /*----------------------------------------------------------------------------
         	%%Function: CreateSecretFileConfigFromXml
         	%%Qualified: SecretsGen.SecretsFileConfig.CreateSecretFileConfigFromXml
         	
         ----------------------------------------------------------------------------*/
-        public static SecretsFileConfig CreateSecretFileConfigFromXml(XmlReader xr)
+        public static SecretsFileConfig CreateSecretFileConfigFromXmlNonTemplate(XmlReader xr)
         {
             if (xr.Name == "secretsFileConfig")
             {
@@ -64,20 +184,18 @@ namespace SecretsGen
                 }
             }
         }
+        #endregion
+
+        #region Tests
 
         [Test]
         public static void TestCreateSecretFileConfigFromXml_EmptyString()
         {
             SecretsFileConfig fileConfig;
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("");
 
             Assert.Throws<Exception>(
-                () =>
-                {
-                    using (StringReader sr = new StringReader(""))
-                    {
-                        fileConfig = CreateSecretFileConfigFromXml(XmlReader.Create(sr));
-                    }
-                });
+                () => { fileConfig = CreateSecretFileConfigFromXmlNonTemplate(xr); });
         }
 
         [Test]
@@ -85,17 +203,65 @@ namespace SecretsGen
         {
             SecretsFileConfig fileConfig;
 
-            using (StringReader sr = new StringReader("<secretsFileConfig/>"))
-            {
-                XmlReader xr = XmlReader.Create(sr);
-                XmlIO.Read(xr);
-                XmlIO.SkipNonContent(xr);
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<secretsFileConfig/>");
+            UnitTestCore.AdvanceReaderToTestContent(xr, "secretsFileConfig");
 
-                fileConfig = CreateSecretFileConfigFromXml(xr);
-            }
-
+            fileConfig = CreateSecretFileConfigFromXmlNonTemplate(xr);
             Assert.IsNull(fileConfig);
         }
 
+        [Test]
+        public static void TestCreateSecretFileConfigFromXmlTemplate_EmptyString()
+        {
+            SecretsFileConfig fileConfig;
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("");
+
+            Assert.Throws<Exception>(
+                () => { fileConfig = CreateSecretFileConfigFromXml(xr); });
+        }
+
+        [Test]
+        public static void TestCreateSecretFileConfigFromXmlTemplate_EmptyElement()
+        {
+            SecretsFileConfig fileConfig;
+
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<secretsFileConfig/>");
+            UnitTestCore.AdvanceReaderToTestContent(xr, "secretsFileConfig");
+
+            fileConfig = CreateSecretFileConfigFromXml(xr);
+            Assert.IsNull(fileConfig);
+        }
+
+        [Test]
+        public static void TestCreateSecretFileConfigFromXmlTemplate_SecretNoTemplate()
+        {
+            SecretsFileConfig fileConfig;
+
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<secretsFileConfig><secrets><secret placeholder=\"$$$connectionString$$$\">test-connection-string</secret></secrets></secretsFileConfig>");
+            UnitTestCore.AdvanceReaderToTestContent(xr, "secretsFileConfig");
+
+            fileConfig = CreateSecretFileConfigFromXml(xr);
+            Assert.IsNotNull(fileConfig);
+            Assert.AreEqual(1, fileConfig.m_mpPlaceholderToSecretID.Keys.Count);
+            Assert.IsTrue(fileConfig.m_mpPlaceholderToSecretID.ContainsKey("$$$connectionString$$$"));
+            Assert.AreEqual("test-connection-string", fileConfig.m_mpPlaceholderToSecretID["$$$connectionString$$$"]);
+        }
+
+        [Test]
+        public static void TestCreateSecretFileConfigFromXmlTemplate_SecretWithTemplate()
+        {
+            SecretsFileConfig fileConfig;
+
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<secretsFileConfig><secrets><secret placeholder=\"$$$connectionString$$$\">test-connection-string</secret></secrets><template><![CDATA[<secretTargetFile><connectionString=\"$$$connectionString$$$\"/></secretTargetFile>]]></template></secretsFileConfig>");
+            UnitTestCore.AdvanceReaderToTestContent(xr, "secretsFileConfig");
+
+            fileConfig = CreateSecretFileConfigFromXml(xr);
+            Assert.IsNotNull(fileConfig);
+            Assert.AreEqual(1, fileConfig.m_mpPlaceholderToSecretID.Keys.Count);
+            Assert.IsTrue(fileConfig.m_mpPlaceholderToSecretID.ContainsKey("$$$connectionString$$$"));
+            Assert.AreEqual("test-connection-string", fileConfig.m_mpPlaceholderToSecretID["$$$connectionString$$$"]);
+            Assert.AreEqual("<secretTargetFile><connectionString=\"$$$connectionString$$$\"/></secretTargetFile>", fileConfig.TargetFileContentTemplate);
+        }
+        #endregion
     }
 }
