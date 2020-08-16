@@ -10,6 +10,21 @@ namespace SecretsGen
     {
         public SecretsConfigReader() { }
 
+        static bool FParseSecretsFilesConfigElements(XmlReader xr, string sElement, SecretsFilesConfig filesConfig)
+        {
+            if (sElement == "secretsFileConfig")
+            {
+                SecretsFileConfig fileConfig = fileConfig = SecretsFileConfig.CreateSecretFileConfigFromXml(xr);
+
+                if (fileConfig != null)
+                    filesConfig.Files.Add(fileConfig);
+
+                return true;
+            }
+
+            throw new Exception($"unknown element {sElement}");
+        }
+
         static SecretsFilesConfig CreateSecretsFilesConfigFromXml(XmlReader xr)
         {
             // if the config is empty, return null
@@ -17,58 +32,11 @@ namespace SecretsGen
                 return null;
 
             XmlIO.SkipNonContent(xr);
-
-            if (xr.NodeType != XmlNodeType.Element)
-                throw new Exception("no root element");
-
-            if (xr.Name != "secretsFilesConfig")
-                throw new Exception("bad root element in secretsConfig");
-
             SecretsFilesConfig filesConfig = new SecretsFilesConfig();
 
-            if (xr.IsEmptyElement)
-                return filesConfig; // just return an empty config
+            XmlIO.FReadElement(xr, filesConfig, "secretsFilesConfig", null, FParseSecretsFilesConfigElements);
 
-            if (!XmlIO.Read(xr))
-                throw new Exception("can't find end of start root element");
-
-            XmlIO.SkipNonContent(xr);
-
-            while (xr.NodeType != XmlNodeType.Element)
-            {
-                // we don't expect any attributes, but we will be tolerant
-                if (xr.NodeType != XmlNodeType.Attribute)
-                    throw new Exception("non attribute on root element");
-
-                if (!XmlIO.Read(xr))
-                    throw new Exception("can't find end of start root element");
-
-                XmlIO.SkipNonContent(xr);
-            }
-
-            while (true)
-            {
-                if (xr.NodeType == XmlNodeType.Element)
-                {
-                    // now we are inside the root element
-                    if (xr.Name == "secretsFile")
-                    {
-                        //
-                    }
-                    continue;
-                }
-
-                if (xr.NodeType == XmlNodeType.EndElement)
-                {
-                    if (xr.Name != "secretsFilesConfig")
-                        throw new Exception($"end tag {xr.Name} does not match start tag <secretsFilesConfig>");
-
-                    break;
-                }
-                XmlIO.Read(xr);
-            }
-
-            return null;
+            return filesConfig;
         }
 
         public static SecretsFilesConfig CreateSecretsFilesConfig(string xml)

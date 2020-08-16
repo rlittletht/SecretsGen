@@ -9,7 +9,7 @@ using XMLIO;
 
 namespace SecretsGen
 {
-    class SecretsFileConfig
+    public class SecretsFileConfig
     {
         private Dictionary<string, string> m_mpPlaceholderToSecretID = new Dictionary<string, string>();
         private Dictionary<string, string> m_mpSecretIDSecret = new Dictionary<string, string>();
