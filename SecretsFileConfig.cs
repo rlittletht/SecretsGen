@@ -27,6 +27,10 @@ namespace SecretsGen
             PlaceholderToSecretID.Add(sPlaceholder, sSecretID);
         }
 
+        public void AddSecret(string sSecretID, string sSecret)
+        {
+            SecretIDToSecret.Add(sSecretID, sSecret);
+        }
         
         public string TransformContentTemplate()
         {

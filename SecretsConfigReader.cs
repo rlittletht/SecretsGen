@@ -73,18 +73,6 @@ namespace SecretsGen
         ----------------------------------------------------------------------------*/
         public static SecretsFilesConfig CreateSecretsFilesConfig(Stream stm)
         {
-            XmlDocument dom = new XmlDocument();
-            try
-            {
-                dom.Load(stm);
-            }
-            catch (Exception e)
-            {
-                Exception eGeneric = new Exception(e.Message);
-
-                throw eGeneric;
-            }
-
             return CreateSecretsFilesConfigFromXml(XmlReader.Create(stm));
         }
 
