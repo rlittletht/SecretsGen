@@ -43,7 +43,7 @@ namespace SecretsGen
                 sTransformed = sTransformed.Replace(sKey, sSecret);
             }
 
-            return sTransformed;
+            return sTransformed.Replace("\n", Environment.NewLine);
         }
 
         #region Test transformations

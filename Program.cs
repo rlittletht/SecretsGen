@@ -14,7 +14,7 @@ namespace SecretsGen
         static void Main(string[] args)
         {
 //            args = new[] {"-Secret", "AzureSql-ConnectionString/09fbb405e7b2434ea50979b6b6e92cf1" };
-            args = new[] { "-Manifest", "d:\\dev\\SecretsGen\\Secrets.xml" };
+//            args = new[] { "-Manifest", "d:\\dev\\SecretsGen\\Secrets.xml" };
 
             Config config = new Config();
             CmdLine cmdLine = new CmdLine(Config.s_CmdLineConfig);
@@ -37,8 +37,10 @@ namespace SecretsGen
             // for this, we will need a SecretManager
             SecretManager secrets = new SecretManager();
 
-            Stream stm = File.Open(config.ManifestFile, FileMode.Open);
+            string sFullPathToManifest = Path.GetFullPath(config.ManifestFile);
+            string sManifestDirectory = Path.GetDirectoryName(sFullPathToManifest);
 
+            Stream stm = File.Open(sFullPathToManifest, FileMode.Open);
             SecretsFilesConfig filesConfig = SecretsConfigReader.CreateSecretsFilesConfig(stm);
 
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
@@ -64,12 +66,16 @@ namespace SecretsGen
             // ready to create each target file
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
             {
-                StreamWriter sw = File.CreateText(fileConfig.TargetFile);
+                string sFullPathToTargetFile = PathHelper.FullPathFromPaths(fileConfig.TargetFile, sManifestDirectory);
 
+                PathHelper.EnsureDirectoriesExist(sFullPathToTargetFile);
+
+                StreamWriter sw = File.CreateText(sFullPathToTargetFile);
+                
                 sw.Write(fileConfig.TransformContentTemplate());
                 sw.Flush();
                 sw.Close();
-                Console.WriteLine($"Created file {fileConfig.TargetFile}, transformed from template...");
+                Console.WriteLine($"Created file {sFullPathToTargetFile}, transformed from template...");
             }
         }
         static void ShowSecret(Config config)
