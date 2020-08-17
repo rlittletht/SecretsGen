@@ -27,8 +27,7 @@ namespace SecretsGen
 
             if (config.ShowSecret != null)
                 ShowSecret(config);
-
-            if (config.ManifestFile != null)
+            else if (config.ManifestFile != null)
                 ProcessManifestFile(config);
         }
 
@@ -48,16 +47,19 @@ namespace SecretsGen
                 // gather the secrets and look them up
                 foreach (string secretID in fileConfig.PlaceholderToSecretID.Values)
                 {
-                    if (!secrets.FFetchSecret(secretID, out string sSecret, out string sError))
+                    if (!filesConfig.SecretIDToSecret.ContainsKey(secretID))
                     {
-                        Console.WriteLine($"Could not fetch secret '{config.ShowSecret}': {sError}");
-                        if (!config.ContinueOnError)
-                            throw new Exception("ContinueOnError not specified. halting");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Successfully fetch secret {secretID}");
-                        fileConfig.AddSecret(secretID, sSecret);
+                        if (!secrets.FFetchSecret(secretID, out string sSecret, out string sError))
+                        {
+                            Console.WriteLine($"Could not fetch secret '{config.ShowSecret}': {sError}");
+                            if (!config.ContinueOnError)
+                                throw new Exception("ContinueOnError not specified. halting");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Successfully fetch secret {secretID}");
+                            filesConfig.AddSecret(secretID, sSecret);
+                        }
                     }
                 }
             }
@@ -72,7 +74,7 @@ namespace SecretsGen
 
                 StreamWriter sw = File.CreateText(sFullPathToTargetFile);
                 
-                sw.Write(fileConfig.TransformContentTemplate());
+                sw.Write(fileConfig.TransformContentTemplate(filesConfig.SecretIDToSecret));
                 sw.Flush();
                 sw.Close();
                 Console.WriteLine($"Created file {sFullPathToTargetFile}, transformed from template...");

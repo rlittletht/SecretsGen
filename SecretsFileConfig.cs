@@ -15,8 +15,6 @@ namespace SecretsGen
     public class SecretsFileConfig
     {
         public Dictionary<string, string> PlaceholderToSecretID { get; internal set; } = new Dictionary<string, string>();
-        public Dictionary<string, string> SecretIDToSecret { get; internal set; } = new Dictionary<string, string>();
-
         
         public string TargetFile { get; internal set; }
         public string TargetFileContentTemplate { get; internal set; }
@@ -27,12 +25,7 @@ namespace SecretsGen
             PlaceholderToSecretID.Add(sPlaceholder, sSecretID);
         }
 
-        public void AddSecret(string sSecretID, string sSecret)
-        {
-            SecretIDToSecret.Add(sSecretID, sSecret);
-        }
-        
-        public string TransformContentTemplate()
+        public string TransformContentTemplate(Dictionary<string, string> SecretIDToSecret)
         {
             string sTransformed = TargetFileContentTemplate;
 
@@ -52,21 +45,25 @@ namespace SecretsGen
         public static void TestTransformContentTemplate_MissingKey()
         {
             SecretsFileConfig fileConfig = new SecretsFileConfig();
+            Dictionary<string, string> secrets = new Dictionary<string, string>();
+
             fileConfig.PlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
             fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
 
-            Assert.Throws<KeyNotFoundException>(() => fileConfig.TransformContentTemplate());
+            Assert.Throws<KeyNotFoundException>(() => fileConfig.TransformContentTemplate(secrets));
         }
 
         [Test]
         public static void TestTransformContentTemplate_SingleSecret()
         {
             SecretsFileConfig fileConfig = new SecretsFileConfig();
+            Dictionary<string, string> secrets = new Dictionary<string, string>();
+
             fileConfig.PlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
-            fileConfig.SecretIDToSecret.Add("secret-id-1", "MYSECRET!");
+            secrets.Add("secret-id-1", "MYSECRET!");
             fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
 
-            string sTransformed = fileConfig.TransformContentTemplate();
+            string sTransformed = fileConfig.TransformContentTemplate(secrets);
             Assert.AreEqual("this is my MYSECRET! test", sTransformed);
         }
 
@@ -74,13 +71,15 @@ namespace SecretsGen
         public static void TestTransformContentTemplate_TwoSecretsOneReplace()
         {
             SecretsFileConfig fileConfig = new SecretsFileConfig();
+            Dictionary<string, string> secrets = new Dictionary<string, string>();
+
             fileConfig.PlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
             fileConfig.PlaceholderToSecretID.Add("$$placeholder2$$", "secret-id-2");
-            fileConfig.SecretIDToSecret.Add("secret-id-1", "MYSECRET!");
-            fileConfig.SecretIDToSecret.Add("secret-id-2", "MY2SECRET!");
+            secrets.Add("secret-id-1", "MYSECRET!");
+            secrets.Add("secret-id-2", "MY2SECRET!");
             fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test";
 
-            string sTransformed = fileConfig.TransformContentTemplate();
+            string sTransformed = fileConfig.TransformContentTemplate(secrets);
             Assert.AreEqual("this is my MYSECRET! test", sTransformed);
         }
 
@@ -88,13 +87,15 @@ namespace SecretsGen
         public static void TestTransformContentTemplate_TwoSecretsTwoReplaces()
         {
             SecretsFileConfig fileConfig = new SecretsFileConfig();
+            Dictionary<string, string> secrets = new Dictionary<string, string>();
+
             fileConfig.PlaceholderToSecretID.Add("$$placeholder1$$", "secret-id-1");
             fileConfig.PlaceholderToSecretID.Add("$$placeholder2$$", "secret-id-2");
-            fileConfig.SecretIDToSecret.Add("secret-id-1", "MYSECRET!");
-            fileConfig.SecretIDToSecret.Add("secret-id-2", "MY2SECRET!");
+            secrets.Add("secret-id-1", "MYSECRET!");
+            secrets.Add("secret-id-2", "MY2SECRET!");
             fileConfig.TargetFileContentTemplate = "this is my $$placeholder1$$ test $$placeholder2$$";
 
-            string sTransformed = fileConfig.TransformContentTemplate();
+            string sTransformed = fileConfig.TransformContentTemplate(secrets);
             Assert.AreEqual("this is my MYSECRET! test MY2SECRET!", sTransformed);
         }
 
