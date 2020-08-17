@@ -12,7 +12,7 @@ namespace SecretsGen
         public static string s_KeyVault = "https://thetasoft.vault.azure.net/";
 
         public string ShowSecret { get; private set; }
-        public string ManifestFile { get; private set; } = "Secrets.xml";
+        public string ManifestFile { get; private set; } = "SecretsManifest.xml";
         public bool ContinueOnError { get; private set; }
 
         public static CmdLineConfig s_CmdLineConfig = new CmdLineConfig(new CmdLineSwitch[]
