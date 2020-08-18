@@ -41,9 +41,12 @@ namespace SecretsGen
 
             Stream stm = File.Open(sFullPathToManifest, FileMode.Open);
             SecretsFilesConfig filesConfig = SecretsConfigReader.CreateSecretsFilesConfig(stm);
+            List<string> plsTargetFiles = new List<string>();
 
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
             {
+                plsTargetFiles.Add(PathHelper.FullPathFromPaths(fileConfig.TargetFile, sManifestDirectory));
+
                 // gather the secrets and look them up
                 foreach (string secretID in fileConfig.PlaceholderToSecretID.Values)
                 {
@@ -65,6 +68,26 @@ namespace SecretsGen
             }
 
             // at this point we have fetched all secrets
+
+            // before we create the secrets files, lets make sure any .gitignore is updated
+            // to ignore the files we are about to create (we don't want them getting committed)
+            string sGitIgnorePath = Path.Combine(sManifestDirectory, ".gitignore");
+            if (!config.NoGitIgnore && File.Exists(sGitIgnorePath))
+            {
+                GitIgnore ignore = GitIgnore.CreateGitIgnore(sGitIgnorePath, plsTargetFiles);
+
+                string sGitIgnoreBackupPath = $"{sGitIgnorePath}.old";
+
+                File.Move(sGitIgnorePath, sGitIgnoreBackupPath);
+                using (StreamWriter sw = new StreamWriter(File.Create(sGitIgnorePath)))
+                {
+                    ignore.WriteGitIgnore(sw);
+                    sw.Flush();
+                    sw.Close();
+                }
+                File.Delete(sGitIgnoreBackupPath);
+            }
+
             // ready to create each target file
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
             {

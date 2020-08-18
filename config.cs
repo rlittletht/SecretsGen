@@ -14,12 +14,14 @@ namespace SecretsGen
         public string ShowSecret { get; private set; }
         public string ManifestFile { get; private set; } = "SecretsManifest.xml";
         public bool ContinueOnError { get; private set; }
+        public bool NoGitIgnore { get; private set; }
 
         public static CmdLineConfig s_CmdLineConfig = new CmdLineConfig(new CmdLineSwitch[]
         {
             new CmdLineSwitch("Secret", false, false, "SecretID to fetch from Azure keyvault", "SecretID", null),
             new CmdLineSwitch("Manifest", false, false, "Manifest file of secrets files to create (if this option not specified, default is 'Secrets.xml'", "Manifest File", null),
             new CmdLineSwitch("ContinueOnError", true, false, "Continue processing file if a secret can't be fetched", "Continue on error", null), 
+            new CmdLineSwitch("NoGitIgnore", true, false, "Don't update .gitignore for the target files", "Don't update .gitignore", null), 
         });
 
         public bool FDispatchCmdLineSwitch(TCore.CmdLine.CmdLineSwitch cls, string sParam, object oClient, out string sError)
@@ -36,6 +38,10 @@ namespace SecretsGen
             else if (cls.Switch == "ContinueOnError")
             {
                 ContinueOnError = true;
+            }
+            else if (cls.Switch == "NoGitIgnore")
+            {
+                NoGitIgnore = true;
             }
             else
             {
