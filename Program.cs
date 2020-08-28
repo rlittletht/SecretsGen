@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using TCore.CmdLine;
 
 namespace SecretsGen
@@ -69,6 +70,13 @@ namespace SecretsGen
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
             {
                 string sFullPathToTargetFile = PathHelper.FullPathFromPaths(fileConfig.TargetFile, sManifestDirectory);
+
+                if (fileConfig.TemplateFile != null && fileConfig.TargetFileContentTemplate == null)
+                {
+                    string sFullPath = PathHelper.FullPathFromPaths(fileConfig.TemplateFile, sManifestDirectory);
+
+                    fileConfig.TargetFileContentTemplate = SecretsConfigReader.ReadStreamIntoString(File.Open(sFullPath, FileMode.Open));
+                }
 
                 PathHelper.EnsureDirectoriesExist(sFullPathToTargetFile);
 
