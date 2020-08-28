@@ -17,7 +17,9 @@ namespace SecretsGen
         public Dictionary<string, string> PlaceholderToSecretID { get; internal set; } = new Dictionary<string, string>();
         
         public string TargetFile { get; internal set; }
+        public string TemplateFile { get; internal set; }
         public string TargetFileContentTemplate { get; internal set; }
+
         public SecretsFileConfig() { }
 
         public void AddPlaceholder(string sPlaceholder, string sSecretID)

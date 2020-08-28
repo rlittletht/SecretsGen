@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Xml;
 using NUnit.Framework;
 using XMLIO;
@@ -92,6 +93,16 @@ namespace SecretsGen
 
                 if (fRet)
                     fileConfig.TargetFile = sTargetFile;
+
+                return fRet;
+            }
+
+            if (sAttribute == "templateFile")
+            {
+                bool fRet = XmlIO.FProcessGenericValue(sValue, out string sTemplateFile, (string) null);
+
+                if (fRet)
+                    fileConfig.TemplateFile = sTemplateFile;
 
                 return fRet;
             }
@@ -191,6 +202,25 @@ namespace SecretsGen
             return fileConfig;
         }
 
+        /*----------------------------------------------------------------------------
+        	%%Function: ReadStreamIntoString
+        	%%Qualified: SecretsGen.SecretsConfigReader.ReadStreamIntoString
+        	
+        ----------------------------------------------------------------------------*/
+        public static string ReadStreamIntoString(Stream stm)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            using (TextReader tr = new StreamReader(stm))
+            {
+                string sLine;
+
+                while ((sLine = tr.ReadLine()) != null)
+                    sb.Append($"{sLine}\n");
+            }
+
+            return sb.ToString();
+        }
         /*----------------------------------------------------------------------------
         	%%Function: CreateSecretFileConfigFromXml
         	%%Qualified: SecretsGen.SecretsConfigReader.CreateSecretFileConfigFromXml
