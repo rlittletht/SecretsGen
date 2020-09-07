@@ -27,7 +27,7 @@ namespace SecretsGen
             PlaceholderToSecretID.Add(sPlaceholder, sSecretID);
         }
 
-        public string TransformContentTemplate(Dictionary<string, string> SecretIDToSecret)
+        public string TransformContentTemplate(Dictionary<string, string> SecretIDToSecret, string sFullPathToTemplateSource = "/dev/null")
         {
             string sTransformed = TargetFileContentTemplate;
 
@@ -37,6 +37,8 @@ namespace SecretsGen
 
                 sTransformed = sTransformed.Replace(sKey, sSecret);
             }
+
+            sTransformed = sTransformed.Replace("$$$template_source$$$", sFullPathToTemplateSource);
 
             return sTransformed.Replace("\n", Environment.NewLine);
         }
