@@ -93,19 +93,21 @@ namespace SecretsGen
             foreach (SecretsFileConfig fileConfig in filesConfig.Files)
             {
                 string sFullPathToTargetFile = PathHelper.FullPathFromPaths(fileConfig.TargetFile, sManifestDirectory);
+                string sFullPathToTemplateSource = sFullPathToManifest; // assume the template was embedded in the manifest
 
                 if (fileConfig.TemplateFile != null && fileConfig.TargetFileContentTemplate == null)
                 {
                     string sFullPath = PathHelper.FullPathFromPaths(fileConfig.TemplateFile, sManifestDirectory);
 
                     fileConfig.TargetFileContentTemplate = SecretsConfigReader.ReadStreamIntoString(File.Open(sFullPath, FileMode.Open));
+                    sFullPathToTemplateSource = sFullPath; // now we know the template came from a template file
                 }
 
                 PathHelper.EnsureDirectoriesExist(sFullPathToTargetFile);
 
                 StreamWriter sw = File.CreateText(sFullPathToTargetFile);
                 
-                sw.Write(fileConfig.TransformContentTemplate(filesConfig.SecretIDToSecret));
+                sw.Write(fileConfig.TransformContentTemplate(filesConfig.SecretIDToSecret, sFullPathToTemplateSource));
                 sw.Flush();
                 sw.Close();
                 Console.WriteLine($"Created file {sFullPathToTargetFile}, transformed from template...");
