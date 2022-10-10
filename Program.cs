@@ -105,6 +105,9 @@ namespace SecretsGen
 
                 PathHelper.EnsureDirectoriesExist(sFullPathToTargetFile);
 
+                if (config.Backup)
+                    PathHelper.MoveToBackupFile(sFullPathToTargetFile);
+
                 StreamWriter sw = File.CreateText(sFullPathToTargetFile);
                 
                 sw.Write(fileConfig.TransformContentTemplate(filesConfig.SecretIDToSecret, sFullPathToTemplateSource));

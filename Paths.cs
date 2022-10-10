@@ -1,4 +1,5 @@
 ﻿
+using System;
 using NUnit.Framework;
 using System.IO;
 using Microsoft.Identity.Client;
@@ -64,5 +65,36 @@ namespace SecretsGen
                 Directory.Delete(sCleanupRoot, true);
         }
         #endif
+
+        public static string FormatBackupFileName(string sFile, int cBackup)
+        {
+            if (cBackup == 0)
+                return $"{sFile}.bak";
+
+            return $"{sFile}.bak.{cBackup:D3}";
+        }
+
+        public static string GetBackupFileName(string sFileToBackup)
+        {
+            int cBackup = 0;
+            string sBackupFile = FormatBackupFileName(sFileToBackup, cBackup);
+
+            while (File.Exists(sBackupFile))
+            {
+                cBackup++;
+
+                if (cBackup > 10)
+                    throw new Exception($"could not get unique backup filename after 10 tries: {sBackupFile}");
+            }
+
+            return sBackupFile;
+        }
+
+        public static void MoveToBackupFile(string sFileToBackup)
+        {
+            string sBackupFile = GetBackupFileName(sFileToBackup);
+
+            File.Move(sFileToBackup, sBackupFile);
+        }
     }
 }
