@@ -90,7 +90,7 @@ namespace SecretsGen
         {
             SecretsFileConfig fileConfig;
 
-            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<secretsFileConfig><secrets><secret placeholder=\"$$$connectionString$$$\">test-connection-string</secret></secrets><template><![CDATA[<secretTargetFile><connectionString=\"$$$connectionString$$$\"/></secretTargetFile>]]></template></secretsFileConfig>");
+            XmlReader xr = UnitTestCore.SetupXmlReaderForTest("<?xml version=\"1.0\"?><secretsFileConfig><secrets><secret placeholder=\"$$$connectionString$$$\">test-connection-string</secret></secrets><template><![CDATA[<secretTargetFile><connectionString=\"$$$connectionString$$$\"/></secretTargetFile>]]></template></secretsFileConfig>");
             UnitTestCore.AdvanceReaderToTestContent(xr, "secretsFileConfig");
 
             fileConfig = CreateSecretFileConfigFromXml(xr);
